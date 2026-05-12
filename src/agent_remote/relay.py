@@ -42,6 +42,12 @@ class RelayStore:
         artifact_dst = self.artifact_path(manifest)
         if not artifact_dst.exists():
             copy_file_atomic(artifact_path, artifact_dst)
+        self.submit_manifest(manifest)
+
+    def submit_manifest(self, manifest: JobManifest) -> None:
+        artifact_dst = self.artifact_path(manifest)
+        if not artifact_dst.exists():
+            raise FileNotFoundError(f"artifact not found in relay store: {artifact_dst}")
         manifest.status = JobStatus.PENDING
         manifest.timestamps["submitted_at"] = utc_now()
         atomic_write_json(self.job_path(JobStatus.PENDING, manifest.job_id), manifest.to_dict())
@@ -85,6 +91,14 @@ class RelayStore:
         manifest.timestamps["finished_at"] = utc_now()
         relay_result_dir = self.results_dir / manifest.job_id
         copytree_replace(result_dir, relay_result_dir)
+        self.finish_uploaded_results(manifest, status)
+
+    def finish_uploaded_results(self, manifest: JobManifest, status: JobStatus) -> None:
+        relay_result_dir = self.results_dir / manifest.job_id
+        if not relay_result_dir.exists():
+            raise FileNotFoundError(f"result directory not found: {relay_result_dir}")
+        manifest.status = status
+        manifest.timestamps["finished_at"] = manifest.timestamps.get("finished_at", utc_now())
         final_path = self.job_path(status, manifest.job_id)
         atomic_write_json(final_path, manifest.to_dict())
         running_path = self.job_path(JobStatus.RUNNING, manifest.job_id)

@@ -20,6 +20,7 @@ DEFAULT_TIMEOUT_SEC = 600
 class TargetConfig:
     name: str
     relay_root: str | None = None
+    relay_url: str | None = None
     work_root: str | None = None
     default_timeout_sec: int | None = None
     allowed_commands: list[str] = field(default_factory=list)
@@ -36,6 +37,7 @@ class TargetConfig:
         return cls(
             name=name,
             relay_root=_optional_str(data.get("relay_root")),
+            relay_url=_optional_str(data.get("relay_url")),
             work_root=_optional_str(data.get("work_root")),
             default_timeout_sec=_optional_int(data.get("default_timeout_sec")),
             allowed_commands=[str(item) for item in data.get("allowed_commands", [])],

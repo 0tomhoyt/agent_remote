@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import tarfile
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -81,6 +82,24 @@ def copytree_replace(src: Path, dst: Path) -> None:
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(src, dst)
+
+
+def tar_directory(src_dir: Path, archive_path: Path) -> None:
+    archive_path.parent.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive_path, "w:gz") as archive:
+        for path in sorted(src_dir.rglob("*")):
+            archive.add(path, arcname=path.relative_to(src_dir))
+
+
+def extract_tar_safe(archive_path: Path, dest_dir: Path) -> None:
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_resolved = dest_dir.resolve()
+    with tarfile.open(archive_path) as archive:
+        for member in archive.getmembers():
+            target = (dest_dir / member.name).resolve()
+            if not target.is_relative_to(dest_resolved):
+                raise ValueError(f"unsafe tar member path: {member.name}")
+        archive.extractall(dest_dir)
 
 
 def tail_text(text: str, line_count: int | None) -> str:

@@ -13,9 +13,8 @@
   负责上传 artifact、提交 job、读取结果
 
 Relay
-  当前已实现：文件系统 relay
-  形态可以是共享目录、SMB/CIFS 挂载、SFTP/sshfs 挂载、Windows 目录
-  当前没有常驻 relay 进程
+  推荐：HTTP relay server，Windows PC 或任意中转机运行 relay-server
+  也支持：文件系统 relay，共享目录、SMB/CIFS 挂载、SFTP/sshfs 挂载、Windows 目录
 
 执行机 Execution Host
   安装 agent_remote
@@ -27,7 +26,32 @@ Relay
 
 分情况。
 
-### 当前主模式：文件系统 relay
+### 推荐主模式：HTTP relay server
+
+Windows PC 或中转机运行：
+
+```bash
+python -m agent_remote.cli relay-server \
+  --host 0.0.0.0 \
+  --port 8080 \
+  --storage-root C:/agent-remote/server-store
+```
+
+编译机和执行机都配置 relay IP/端口：
+
+```json
+{
+  "targets": {
+    "exec-a": {
+      "relay_url": "http://192.168.1.20:8080"
+    }
+  }
+}
+```
+
+编译机运行 `submit/status/logs/fetch`，执行机运行 `worker`，两边都只主动访问 relay server。
+
+### 兼容模式：文件系统 relay
 
 `agent_remote` 配置里不直接写 relay IP，而是写 `relay_root` 路径。
 
@@ -66,30 +90,17 @@ sudo mount -t cifs //192.168.1.20/agent-remote /mnt/agent-remote
 }
 ```
 
-### 尚未实现：HTTP relay service
-
-如果不想做共享目录或挂载，而是希望 Windows PC 上跑一个 relay 服务，那么就需要类似：
-
-```json
-{
-  "relay": {
-    "type": "http",
-    "url": "http://192.168.1.20:8080"
-  }
-}
-```
-
-这一块目前还没有实现。它应该是下一阶段的重点。
-
 ## 分角色配置
 
 ### 编译机配置
 
-示例：`examples/build-host.relay.config.json`
+HTTP 示例：`examples/build-host.http.config.json`
+
+文件系统 relay 示例：`examples/build-host.relay.config.json`
 
 编译机需要：
 
-- `relay_root`
+- `relay_url` 或 `relay_root`
 - profile 的 `cmd`
 - profile 的 `collect`
 - profile 的 `env`
@@ -97,7 +108,7 @@ sudo mount -t cifs //192.168.1.20/agent-remote /mnt/agent-remote
 编译机运行：
 
 ```bash
-python -m agent_remote.cli --config examples/build-host.relay.config.json submit \
+python -m agent_remote.cli --config examples/build-host.http.config.json submit \
   --profile op-test \
   --artifact ./dist/op_package.tar.gz \
   --json
@@ -106,7 +117,7 @@ python -m agent_remote.cli --config examples/build-host.relay.config.json submit
 查询：
 
 ```bash
-python -m agent_remote.cli --config examples/build-host.relay.config.json status \
+python -m agent_remote.cli --config examples/build-host.http.config.json status \
   <job_id> \
   --target exec-a \
   --json
@@ -114,11 +125,13 @@ python -m agent_remote.cli --config examples/build-host.relay.config.json status
 
 ### 执行机配置
 
-示例：`examples/execution-host.relay.config.json`
+HTTP 示例：`examples/execution-host.http.config.json`
+
+文件系统 relay 示例：`examples/execution-host.relay.config.json`
 
 执行机需要：
 
-- 同一个 `relay_root`
+- 同一个 `relay_url` 或同一个 `relay_root`
 - `work_root`
 - `allowed_commands`
 - `allowed_profiles`
@@ -126,16 +139,6 @@ python -m agent_remote.cli --config examples/build-host.relay.config.json status
 执行机运行：
 
 ```bash
-python -m agent_remote.cli --config examples/execution-host.relay.config.json worker \
+python -m agent_remote.cli --config examples/execution-host.http.config.json worker \
   --target exec-a
 ```
-
-## 当前缺口
-
-当前实现已经能跑通文件系统 relay，但还缺：
-
-- Windows 上常驻 HTTP relay server。
-- `relay_url` 形式的 IP/端口配置。
-- 编译机和执行机通过 HTTP API 上传、拉取、claim、finish job。
-
-所以如果你的 Windows PC 只是“网络中转”但不能提供共享目录或挂载目录，那么现在这版还不够，需要继续实现 HTTP relay backend。

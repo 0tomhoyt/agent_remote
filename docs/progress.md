@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: role and relay configuration clarification pushed
+Status: HTTP relay server implementation in progress
 
 Repository:
 
@@ -81,12 +81,31 @@ Completed:
   - `PYTHONPATH=src python3 -m agent_remote.cli --config examples/build-host.relay.config.json submit --help`
   - `PYTHONPATH=src python3 -m agent_remote.cli --config examples/execution-host.relay.config.json worker --help`
   - `PYTHONPATH=src python3 -m unittest discover -s tests`
+- Implemented HTTP relay server and client backend:
+  - `remote-run relay-server`
+  - target-level `relay_url`
+  - HTTP submit, claim, artifact download, finish, status, logs, and fetch
+- Updated README to make HTTP relay server the recommended three-machine
+  deployment, with filesystem relay documented as a compatibility mode.
+- Added HTTP role-specific example configs:
+  - `examples/build-host.http.config.json`
+  - `examples/execution-host.http.config.json`
+- Added HTTP relay endpoint test.
+- Added HTTP relay CLI config test.
+- Ran HTTP relay validation:
+  - `PYTHONPATH=src python3 -m agent_remote.cli --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli relay-server --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli --config examples/build-host.http.config.json submit --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli --config examples/execution-host.http.config.json worker --help`
+  - `PYTHONPATH=src python3 -m unittest discover -s tests`
+  - `PYTHONPATH=src python3 -m unittest tests.test_http_relay`
+  - `python3 -m compileall src tests`
 
 In progress:
 
-- Planning the HTTP relay backend.
+- Reviewing and committing HTTP relay server implementation.
 
 Next:
 
-- Add HTTP relay design and service skeleton.
+- Add HTTP relay auth token, request size limits, and cleanup policies.
 - Improve SSH direct mode bootstrap docs for installing `agent_remote` on the execution host.

@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from .config import DEFAULT_RELAY_ROOT, DEFAULT_TIMEOUT_SEC, DEFAULT_WORK_ROOT, RemoteRunConfig
+from .http_relay import HTTPRelayClient, create_http_relay_server
 from .models import CommandSpec, DeploySpec, JobManifest, new_job_id
 from .relay import RelayStore
 from .runner import Runner
@@ -37,6 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="relay directory shared by submitters and workers",
     )
+    parser.add_argument("--relay-url", help="HTTP relay server URL, for example http://192.168.1.20:8080")
+    parser.add_argument("--cache-root", default=".agent-remote/cache", help="local cache for HTTP relay artifacts")
     parser.add_argument("--config", help="optional JSON or TOML config file")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -82,6 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
     worker.add_argument("--json", action="store_true")
     worker.set_defaults(func=cmd_worker)
 
+    server = subparsers.add_parser("relay-server", help="run an HTTP relay server")
+    server.add_argument("--host", default="0.0.0.0")
+    server.add_argument("--port", type=int, default=8080)
+    server.add_argument("--storage-root", default=".agent-remote/http-relay")
+    server.set_defaults(func=cmd_relay_server)
+
     return parser
 
 
@@ -100,7 +109,7 @@ def add_submit_args(parser: argparse.ArgumentParser) -> None:
 def cmd_submit(args: argparse.Namespace) -> int:
     config = RemoteRunConfig.load(args.config)
     manifest, artifact_path = build_manifest(args, config)
-    relay = RelayStore(resolve_relay_root(args, config, manifest.target))
+    relay = resolve_relay(args, config, manifest.target)
     relay.submit(manifest, artifact_path)
     print_submit_result(args, manifest)
     return 0
@@ -198,7 +207,7 @@ def print_submit_result(args: argparse.Namespace, manifest: JobManifest) -> None
 
 def cmd_status(args: argparse.Namespace) -> int:
     config = RemoteRunConfig.load(args.config)
-    relay = RelayStore(resolve_relay_root(args, config, args.target))
+    relay = resolve_relay(args, config, args.target)
     manifest = relay.read_manifest(args.job_id)
     if args.json:
         print(json.dumps(manifest.to_dict(), indent=2, sort_keys=True))
@@ -212,7 +221,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 def cmd_logs(args: argparse.Namespace) -> int:
     config = RemoteRunConfig.load(args.config)
-    relay = RelayStore(resolve_relay_root(args, config, args.target))
+    relay = resolve_relay(args, config, args.target)
     name = "stderr.log" if args.stderr else "stdout.log"
     text = relay.read_log(args.job_id, name)
     print(tail_text(text, args.tail), end="")
@@ -221,7 +230,7 @@ def cmd_logs(args: argparse.Namespace) -> int:
 
 def cmd_fetch(args: argparse.Namespace) -> int:
     config = RemoteRunConfig.load(args.config)
-    relay = RelayStore(resolve_relay_root(args, config, args.target))
+    relay = resolve_relay(args, config, args.target)
     relay.fetch_results(args.job_id, Path(args.out))
     print(f"fetched {args.job_id} -> {Path(args.out).expanduser().resolve()}")
     return 0
@@ -230,7 +239,7 @@ def cmd_fetch(args: argparse.Namespace) -> int:
 def cmd_worker(args: argparse.Namespace) -> int:
     config = RemoteRunConfig.load(args.config)
     target_config = config.target(args.target)
-    relay = RelayStore(resolve_relay_root(args, config, args.target))
+    relay = resolve_relay(args, config, args.target)
     work_root = args.work_root or (target_config.work_root if target_config else None) or DEFAULT_WORK_ROOT
     allowed_commands: list[str] = []
     allowed_profiles: list[str] = []
@@ -257,6 +266,34 @@ def cmd_worker(args: argparse.Namespace) -> int:
         if job_id:
             print(f"ran {job_id}", flush=True)
         time.sleep(args.poll_interval)
+
+
+def cmd_relay_server(args: argparse.Namespace) -> int:
+    server = create_http_relay_server(args.host, args.port, args.storage_root)
+    print(f"relay server listening on http://{args.host}:{args.port}", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        server.server_close()
+    return 0
+
+
+def resolve_relay(args: argparse.Namespace, config: RemoteRunConfig, target: str | None):
+    relay_url = resolve_relay_url(args, config, target)
+    if relay_url:
+        return HTTPRelayClient(relay_url, cache_root=args.cache_root)
+    return RelayStore(resolve_relay_root(args, config, target))
+
+
+def resolve_relay_url(args: argparse.Namespace, config: RemoteRunConfig, target: str | None) -> str | None:
+    if args.relay_url:
+        return args.relay_url
+    target_config = config.target(target)
+    if target_config and target_config.relay_url:
+        return target_config.relay_url
+    return None
 
 
 def resolve_relay_root(args: argparse.Namespace, config: RemoteRunConfig, target: str | None) -> str:
