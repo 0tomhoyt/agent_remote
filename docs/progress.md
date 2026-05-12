@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: HTTP relay server implementation in progress
+Status: HTTP relay server implementation pushed
 
 Repository:
 
@@ -17,6 +17,7 @@ Repository:
 - README usage guide commit: `916b508`.
 - Relay-first documentation commit: `3b48efc`.
 - Role and relay configuration clarification commit: `c47fde6`.
+- HTTP relay server implementation commit: `3e0a2bf`.
 
 Completed:
 
@@ -103,7 +104,7 @@ Completed:
 
 In progress:
 
-- Reviewing and committing HTTP relay server implementation.
+- Planning HTTP relay hardening.
 
 Next:
 
