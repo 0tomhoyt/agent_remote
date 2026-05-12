@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: role and relay configuration clarification in progress
+Status: role and relay configuration clarification pushed
 
 Repository:
 
@@ -16,6 +16,7 @@ Repository:
 - Safety follow-up commit: `16187f0`.
 - README usage guide commit: `916b508`.
 - Relay-first documentation commit: `3b48efc`.
+- Role and relay configuration clarification commit: `c47fde6`.
 
 Completed:
 
@@ -83,7 +84,7 @@ Completed:
 
 In progress:
 
-- Reviewing and committing role and relay configuration clarification.
+- Planning the HTTP relay backend.
 
 Next:
 
