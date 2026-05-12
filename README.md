@@ -75,22 +75,49 @@ Relay
 
 ## 安装方式
 
-开发态直接运行：
+需要 Python 3.10+。代码仓库在 `src/agent_remote/` 目录下，CLI 入口是 `src/agent_remote/cli.py`。
+
+### Linux / macOS
 
 ```bash
-cd /path/to/agent_remote
+# 克隆仓库
+git clone https://github.com/0tomhoyt/agent_remote.git
+cd agent_remote
+
+# 安装（推荐，装完后可以直接用 remote-run 命令）
+python3 -m pip install -e .
+remote-run --help
+
+# 或者不安装，加 PYTHONPATH 直接运行
 PYTHONPATH=src python3 -m agent_remote.cli --help
 ```
 
-安装成命令：
+### Windows
 
-```bash
-cd /path/to/agent_remote
-python3 -m pip install -e .
+```powershell
+# 克隆仓库
+git clone https://github.com/0tomhoyt/agent_remote.git
+cd agent_remote
+
+# 安装
+python -m pip install -e .
 remote-run --help
+
+# 或者不安装，加 PYTHONPATH 直接运行
+set PYTHONPATH=src
+python -m agent_remote.cli --help
 ```
 
-后面的示例统一使用 `python -m agent_remote.cli`，默认你已经执行过 `python3 -m pip install -e .`。如果没有安装，请在命令前加 `PYTHONPATH=src`。如果你已经安装了 console script，也可以把它替换成 `remote-run`。
+Windows 上如果 `python` 命令找不到，试试 `py` 或者检查安装时是否勾选了 "Add Python to PATH"。
+
+### 两种运行方式的区别
+
+| 方式 | 命令 | 说明 |
+|------|------|------|
+| pip 安装后 | `remote-run ...` 或 `python -m agent_remote.cli ...` | 随时随地可用 |
+| 不安装 | `PYTHONPATH=src python3 -m agent_remote.cli ...` | 每次要带 `PYTHONPATH=src` |
+
+后面的示例统一写 `python -m agent_remote.cli`。如果你 pip 安装了，可以替换成 `remote-run`。如果没安装，要加上 `PYTHONPATH=src`（Linux/macOS）或 `set PYTHONPATH=src &&`（Windows）前缀。
 
 ## Quickstart：本机 5 分钟跑通
 
@@ -228,34 +255,9 @@ python -m agent_remote.cli --config execution-host.config.json worker --target e
 
 Windows 个人 PC 作为 HTTP relay server 是推荐的部署方式。编译机和执行机只需要能访问 Windows PC 的 IP，彼此不需要互通。
 
-### 第一步：安装 Python
+前提：已经按上面”安装方式”在 Windows 上装好了 agent-remote。
 
-从 https://www.python.org/downloads/ 下载 Python 3.10+，安装时勾选 **”Add Python to PATH”**。
-
-验证：
-
-```powershell
-python --version
-```
-
-### 第二步：安装 agent-remote
-
-```powershell
-cd C:\Users\你的用户名\agent-remote
-git clone https://github.com/0tomhoyt/agent_remote.git
-cd agent_remote
-python -m pip install -e .
-```
-
-或者不安装，直接运行：
-
-```powershell
-cd C:\Users\你的用户名\agent-remote\agent_remote
-set PYTHONPATH=src
-python -m agent_remote.cli --help
-```
-
-### 第三步：创建配置文件
+### 第一步：创建配置文件
 
 创建 `C:\agent-remote\relay-server.config.json`：
 
@@ -273,7 +275,7 @@ python -m agent_remote.cli --help
 - `port` 默认 8080，可以改成其他端口。
 - `storage_root` 是 relay 的数据目录，Windows 路径用正斜杠或双反斜杠。
 
-### 第四步：放行防火墙
+### 第二步：放行防火墙
 
 Windows 防火墙需要放行入站端口。以管理员身份运行 PowerShell：
 
@@ -283,7 +285,7 @@ New-NetFirewallRule -DisplayName “Agent Remote Relay” -Direction Inbound -Lo
 
 或者在 Windows Defender 防火墙 → 高级设置 → 入站规则 → 新建规则 → 端口 → TCP 8080 → 允许连接。
 
-### 第五步：启动 relay server
+### 第三步：启动 relay server
 
 ```powershell
 python -m agent_remote.cli --config C:\agent-remote\relay-server.config.json relay-server
@@ -293,7 +295,7 @@ python -m agent_remote.cli --config C:\agent-remote\relay-server.config.json rel
 
 保持这个窗口打开。如果想后台运行，可以用 `Start-Process` 或者做成 Windows 服务。
 
-### 第六步：确认网络连通
+### 第四步：确认网络连通
 
 在编译机或执行机上测试：
 
