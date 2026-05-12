@@ -86,9 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
     worker.set_defaults(func=cmd_worker)
 
     server = subparsers.add_parser("relay-server", help="run an HTTP relay server")
-    server.add_argument("--host", default="0.0.0.0")
-    server.add_argument("--port", type=int, default=8080)
-    server.add_argument("--storage-root", default=".agent-remote/http-relay")
+    server.add_argument("--host")
+    server.add_argument("--port", type=int)
+    server.add_argument("--storage-root")
     server.set_defaults(func=cmd_relay_server)
 
     return parser
@@ -269,8 +269,13 @@ def cmd_worker(args: argparse.Namespace) -> int:
 
 
 def cmd_relay_server(args: argparse.Namespace) -> int:
-    server = create_http_relay_server(args.host, args.port, args.storage_root)
-    print(f"relay server listening on http://{args.host}:{args.port}", flush=True)
+    config = RemoteRunConfig.load(args.config)
+    relay_cfg = config.relay_server
+    host = args.host or relay_cfg.host
+    port = args.port if args.port is not None else relay_cfg.port
+    storage_root = args.storage_root or relay_cfg.storage_root
+    server = create_http_relay_server(host, port, storage_root)
+    print(f"relay server listening on http://{host}:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -134,6 +134,36 @@ class CliTests(unittest.TestCase):
             self.assertEqual(status["command"]["timeout_sec"], 30)
             self.assertEqual(status["command"]["env"]["PROFILE_ENV"], "1")
 
+    def test_relay_server_config_loaded(self) -> None:
+        from agent_remote.config import RemoteRunConfig
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "relay.config.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "relay_server": {
+                            "host": "127.0.0.1",
+                            "port": 9090,
+                            "storage_root": "/custom/storage",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            config = RemoteRunConfig.load(config_path)
+            self.assertEqual(config.relay_server.host, "127.0.0.1")
+            self.assertEqual(config.relay_server.port, 9090)
+            self.assertEqual(config.relay_server.storage_root, "/custom/storage")
+
+    def test_relay_server_config_defaults(self) -> None:
+        from agent_remote.config import RemoteRunConfig
+
+        config = RemoteRunConfig()
+        self.assertEqual(config.relay_server.host, "0.0.0.0")
+        self.assertEqual(config.relay_server.port, 8080)
+        self.assertEqual(config.relay_server.storage_root, ".agent-remote/http-relay")
+
     @staticmethod
     def _run_cli(argv: list[str]) -> str:
         output = io.StringIO()

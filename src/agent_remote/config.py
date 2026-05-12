@@ -14,6 +14,25 @@ except ModuleNotFoundError:  # pragma: no cover - Python 3.10 fallback
 DEFAULT_RELAY_ROOT = ".agent-remote/relay"
 DEFAULT_WORK_ROOT = ".agent-remote/worker"
 DEFAULT_TIMEOUT_SEC = 600
+DEFAULT_RELAY_HOST = "0.0.0.0"
+DEFAULT_RELAY_PORT = 8080
+DEFAULT_RELAY_STORAGE_ROOT = ".agent-remote/http-relay"
+
+
+@dataclass
+class RelayServerConfig:
+    host: str = DEFAULT_RELAY_HOST
+    port: int = DEFAULT_RELAY_PORT
+    storage_root: str = DEFAULT_RELAY_STORAGE_ROOT
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> "RelayServerConfig":
+        data = data or {}
+        return cls(
+            host=str(data.get("host", DEFAULT_RELAY_HOST)),
+            port=int(data.get("port", DEFAULT_RELAY_PORT)),
+            storage_root=str(data.get("storage_root", DEFAULT_RELAY_STORAGE_ROOT)),
+        )
 
 
 @dataclass
@@ -79,6 +98,7 @@ class ProfileConfig:
 class RemoteRunConfig:
     targets: dict[str, TargetConfig] = field(default_factory=dict)
     profiles: dict[str, ProfileConfig] = field(default_factory=dict)
+    relay_server: RelayServerConfig = field(default_factory=RelayServerConfig)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "RemoteRunConfig":
@@ -90,7 +110,8 @@ class RemoteRunConfig:
             name: ProfileConfig.from_dict(name, value)
             for name, value in data.get("profiles", {}).items()
         }
-        return cls(targets=targets, profiles=profiles)
+        relay_server = RelayServerConfig.from_dict(data.get("relay_server"))
+        return cls(targets=targets, profiles=profiles, relay_server=relay_server)
 
     @classmethod
     def load(cls, path: str | Path | None) -> "RemoteRunConfig":
