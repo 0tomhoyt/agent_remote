@@ -7,9 +7,17 @@
 - 编译机上的 AI agent 需要一个稳定的命令行入口，把产物发过去、触发执行、取回日志和结果。
 - 当编译机和执行机网络不互通时，可以使用 Windows 个人 PC 作为中转。
 
+当前版本的主模式是 **Relay + Worker Polling**：
+
+```text
+编译机 submit -> relay 队列 -> 执行机 worker 主动拉取 -> relay 结果回传 -> 编译机 fetch/logs/status
+```
+
+这个模式也是最推荐给 AI agent 使用的默认路径，因为执行机不需要开放入站端口，编译机和执行机不互通时也可以通过 Windows PC 中转。
+
 当前版本已经支持：
 
-- 文件系统 relay 队列，适合共享目录、SFTP 挂载目录、Windows 中转目录。
+- 文件系统 relay 队列，适合共享目录、SFTP 挂载目录、Windows 中转目录。这是主模式。
 - 执行机 worker 主动拉取任务。
 - artifact SHA-256 校验。
 - tar/zip 解包，普通文件复制。
@@ -19,11 +27,11 @@
 - profile 配置，减少 agent 反复拼长命令。
 - 命令白名单和 profile 白名单。
 - relay 审计日志。
-- SSH direct 模式。
+- SSH direct 辅助模式，适合编译机能直连执行机时快速跑一次。
 
 ## 适用场景
 
-典型拓扑：
+推荐拓扑：
 
 ```text
 编译机 Linux
@@ -40,7 +48,7 @@ Relay
   解包 / 执行测试 / 采集日志 / 上传结果
 ```
 
-如果编译机能直接 SSH 到执行机，也可以使用：
+辅助拓扑：
 
 ```text
 编译机 Linux
@@ -49,8 +57,10 @@ Relay
        | scp + ssh
        v
 执行机 Linux
-  临时 relay / worker once / 结果回传
+  临时远端 relay / worker once / 结果回传
 ```
+
+除非你明确只想做一次直连调试，否则建议优先使用 relay 模式。
 
 ## 安装方式
 
@@ -86,9 +96,45 @@ python -m agent_remote.cli --relay-root .agent-remote/relay status <job_id>
 python -m agent_remote.cli submit --config examples/remote-run.config.json ...
 ```
 
-## Relay 目录结构
+## 主模式命令速查
 
-relay 是编译机和执行机共享的任务队列目录：
+日常使用优先记住这一组命令：
+
+```bash
+# 编译机：提交任务到 relay
+python -m agent_remote.cli --config examples/remote-run.config.json submit \
+  --profile op-test \
+  --artifact ./dist/op_package.tar.gz \
+  --json
+
+# 执行机：长期运行 worker，从 relay 拉取任务
+python -m agent_remote.cli --config examples/remote-run.config.json worker \
+  --target exec-a
+
+# 编译机：查询状态
+python -m agent_remote.cli --config examples/remote-run.config.json status \
+  <job_id> \
+  --target exec-a \
+  --json
+
+# 编译机：查看日志
+python -m agent_remote.cli --config examples/remote-run.config.json logs \
+  <job_id> \
+  --target exec-a \
+  --tail 200
+
+# 编译机：拉取结果
+python -m agent_remote.cli --config examples/remote-run.config.json fetch \
+  <job_id> \
+  --target exec-a \
+  --out ./results/<job_id>
+```
+
+`ssh-submit` 不在主模式速查里。它适合直连环境下偶尔快速跑一次，不建议作为 AI agent 的长期默认入口。
+
+## 主模式：Relay 目录结构
+
+relay 是编译机和执行机共享的任务队列目录，也是本项目的核心运行模式：
 
 ```text
 .agent-remote/relay/
@@ -124,7 +170,7 @@ relay 是编译机和执行机共享的任务队列目录：
 - `results/<job_id>/`：stdout、stderr、meta 和收集文件。
 - `audit/events.jsonl`：任务提交、claim、结束的审计日志。
 
-## 最小闭环：本机模拟
+## 主模式：最小闭环
 
 先准备一个最小 artifact：
 
@@ -161,7 +207,7 @@ python -m agent_remote.cli --relay-root .agent-remote/relay submit \
 }
 ```
 
-执行机 worker 跑一次：
+执行机 worker 跑一次。真实部署时通常让 worker 长期运行，`--once` 只用于本机验证或调试：
 
 ```bash
 python -m agent_remote.cli --relay-root .agent-remote/relay worker \
@@ -206,9 +252,9 @@ results/<job_id>/
     result.json
 ```
 
-## Windows PC 中转模式
+## 主模式：Windows PC 中转
 
-当编译机和执行机无法互通，但两者都能访问 Windows PC 时，推荐使用 Windows 作为 relay。
+当编译机和执行机无法互通，但两者都能访问 Windows PC 时，推荐使用 Windows 作为 relay。这是 relay 主模式最重要的部署形态之一。
 
 Windows 上创建目录：
 
@@ -241,7 +287,7 @@ python -m agent_remote.cli --relay-root /mnt/windows/agent-remote worker \
   --work-root /data/agent-remote/worker
 ```
 
-执行机只需要主动访问 relay，不需要对编译机开放端口。这对企业内网和隔离网络更友好。
+执行机只需要主动访问 relay，不需要对编译机开放端口。这对企业内网和隔离网络更友好，也是 relay 模式优先于 SSH direct 的主要原因。
 
 ## 使用配置文件和 profile
 
@@ -348,9 +394,9 @@ python -m agent_remote.cli --relay-root .agent-remote/relay worker \
 
 注意：当前白名单是第一层安全边界，不等同于完整沙箱。执行机上仍建议使用专用用户运行 worker，例如 `agent-runner`，并把工作目录限制在 `/data/agent-remote/worker`。
 
-## SSH Direct 模式
+## 辅助模式：SSH Direct
 
-当编译机可以直接 SSH 到执行机时，可以使用 `ssh-submit`。
+当编译机可以直接 SSH 到执行机时，可以使用 `ssh-submit`。它不是主路径，而是一个便利入口：用 `scp/ssh` 临时把任务送到执行机的 relay 目录，运行一次 worker，再把结果拉回本地。
 
 前提：
 
@@ -405,6 +451,8 @@ python -m agent_remote.cli ssh-submit \
 3. 用 `scp` 复制 artifact 和 pending job 到执行机。
 4. 用 `ssh` 在执行机上运行一次 worker。
 5. 用 `scp` 把远端 results 和最终 job manifest 拉回本地 relay。
+
+长期使用时仍建议部署常驻 worker，并通过 relay 模式提交任务。这样 AI agent 的调用路径更稳定，也更容易审计和排查。
 
 ## Artifact 规则
 
@@ -469,7 +517,7 @@ python -m agent_remote.cli --config examples/remote-run.config.json status \
 
 ```text
 1. 编译代码，生成 artifact。
-2. submit 或 ssh-submit。
+2. 优先使用 submit 进入 relay 主模式；只有直连调试时使用 ssh-submit。
 3. status --json 获取状态、exit_code、error。
 4. logs --tail 200 获取关键日志。
 5. fetch 拉回 collected 文件。
@@ -562,16 +610,16 @@ python3 -m pip install -e .
 
 已实现：
 
-- filesystem relay
+- filesystem relay 主模式
 - execution worker
 - submit/status/logs/fetch
 - profile config
 - command/profile allowlists
 - audit log
-- ssh-submit
+- ssh-submit 辅助模式
 
 计划中：
 
-- HTTP relay service
+- HTTP relay backend，作为 relay 主模式的下一种后端
 - 更强的失败诊断
 - 多 worker 锁和 heartbeat

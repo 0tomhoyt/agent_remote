@@ -6,6 +6,10 @@ Build a controlled remote execution framework that lets an AI agent on a build
 host deploy compiled artifacts to an execution host, trigger execution, and
 retrieve logs and results.
 
+The primary mode is relay-first: the build host submits jobs to a relay, and
+execution-host workers poll and return results through that same relay. Direct
+SSH is only an auxiliary convenience path.
+
 ## Phase 1: MVP Relay Runner
 
 Deliver a filesystem relay implementation that works with:
@@ -29,11 +33,14 @@ Capabilities:
 Expose stable commands:
 
 - `remote-run submit`
-- `remote-run ssh-submit`
 - `remote-run status`
 - `remote-run logs`
 - `remote-run fetch`
 - `remote-run worker`
+
+Auxiliary command:
+
+- `remote-run ssh-submit`
 
 All commands that return machine-readable information should support `--json`.
 
@@ -61,12 +68,12 @@ Status:
 - worker profile allowlists are implemented.
 - relay audit logs are implemented.
 
-## Phase 4: Direct and HTTP Transports
+## Phase 4: Relay Evolution and Auxiliary Direct Transport
 
 Add:
 
-- direct SSH transport
-- HTTP relay server
+- HTTP relay server as the next relay backend
+- direct SSH transport as an auxiliary mode
 - resumable upload/download where needed
 
 ## Phase 5: Diagnostics

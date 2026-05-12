@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: README usage guide updated and pushed
+Status: relay-first documentation update in progress
 
 Repository:
 
@@ -60,10 +60,17 @@ Completed:
 - Ran README command validation:
   - `PYTHONPATH=src python3 -m agent_remote.cli --help`
   - `PYTHONPATH=src python3 -m agent_remote.cli ssh-submit --help`
+- Updated README and work plan wording to make relay mode the primary/default
+  architecture and SSH direct an auxiliary convenience path.
+- Added a relay-first command quick reference that highlights submit, worker,
+  status, logs, and fetch as the daily workflow.
+- Ran relay-first documentation command validation:
+  - `PYTHONPATH=src python3 -m agent_remote.cli --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli worker --help`
 
 In progress:
 
-- Planning the HTTP relay service skeleton.
+- Reviewing and committing relay-first documentation update.
 
 Next:
 
