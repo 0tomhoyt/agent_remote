@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: in progress
+Status: MVP implemented and pushed
 
 Repository:
 
@@ -10,6 +10,8 @@ Repository:
 - Remote origin configured as `https://github.com/0tomhoyt/agent_remote.git`.
 - Git global proxy settings were removed at the user's request.
 - Remote repository fetched successfully and appeared empty at project start.
+- Initial implementation commit: `c072be7`.
+- `main` pushed to `origin`.
 
 Completed:
 
@@ -29,9 +31,10 @@ Completed:
 
 In progress:
 
-- Preparing the first Git commit.
+- Planning the next implementation slice.
 
 Next:
 
-- Commit the first implementation.
-- Push to `origin main` when the local validation passes.
+- Add SSH direct transport.
+- Add command/profile allowlists.
+- Add HTTP relay design and service skeleton.
