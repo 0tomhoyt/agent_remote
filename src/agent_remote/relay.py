@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from .models import JobManifest, JobStatus, utc_now
-from .util import atomic_write_json, copy_file_atomic, copytree_replace, read_json
+from .util import append_jsonl, atomic_write_json, copy_file_atomic, copytree_replace, read_json
 
 
 STATUS_DIRS = {
@@ -28,6 +28,7 @@ class RelayStore:
     def ensure_layout(self) -> None:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.results_dir.mkdir(parents=True, exist_ok=True)
+        (self.root / "audit").mkdir(parents=True, exist_ok=True)
         for dirname in STATUS_DIRS.values():
             (self.jobs_dir / dirname).mkdir(parents=True, exist_ok=True)
 
@@ -44,6 +45,7 @@ class RelayStore:
         manifest.status = JobStatus.PENDING
         manifest.timestamps["submitted_at"] = utc_now()
         atomic_write_json(self.job_path(JobStatus.PENDING, manifest.job_id), manifest.to_dict())
+        self.audit("job_submitted", manifest)
 
     def find_job_path(self, job_id: str) -> Path | None:
         for status in JobStatus:
@@ -74,6 +76,7 @@ class RelayStore:
             manifest.runner_id = runner_id
             manifest.timestamps["started_at"] = utc_now()
             atomic_write_json(claimed_path, manifest.to_dict())
+            self.audit("job_claimed", manifest)
             return manifest
         return None
 
@@ -86,6 +89,7 @@ class RelayStore:
         atomic_write_json(final_path, manifest.to_dict())
         running_path = self.job_path(JobStatus.RUNNING, manifest.job_id)
         running_path.unlink(missing_ok=True)
+        self.audit("job_finished", manifest)
 
     def result_path(self, job_id: str) -> Path:
         return self.results_dir / job_id
@@ -104,3 +108,19 @@ class RelayStore:
         if out_dir.exists():
             shutil.rmtree(out_dir)
         shutil.copytree(src, out_dir)
+
+    def audit(self, event: str, manifest: JobManifest) -> None:
+        append_jsonl(
+            self.root / "audit" / "events.jsonl",
+            {
+                "event": event,
+                "time": utc_now(),
+                "job_id": manifest.job_id,
+                "target": manifest.target,
+                "status": manifest.status.value,
+                "profile": manifest.profile,
+                "runner_id": manifest.runner_id,
+                "exit_code": manifest.exit_code,
+                "error": manifest.error,
+            },
+        )

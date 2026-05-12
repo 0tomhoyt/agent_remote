@@ -57,6 +57,13 @@ def read_json(path: Path) -> dict[str, Any]:
         return json.load(handle)
 
 
+def append_jsonl(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        json.dump(data, handle, sort_keys=True)
+        handle.write("\n")
+
+
 def copy_file_atomic(src: Path, dst: Path) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(prefix=f".{dst.name}.", suffix=".tmp", dir=dst.parent)

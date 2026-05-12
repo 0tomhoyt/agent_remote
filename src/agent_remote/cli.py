@@ -233,8 +233,10 @@ def cmd_worker(args: argparse.Namespace) -> int:
     relay = RelayStore(resolve_relay_root(args, config, args.target))
     work_root = args.work_root or (target_config.work_root if target_config else None) or DEFAULT_WORK_ROOT
     allowed_commands: list[str] = []
+    allowed_profiles: list[str] = []
     if target_config:
         allowed_commands.extend(target_config.allowed_commands)
+        allowed_profiles.extend(target_config.allowed_profiles)
     allowed_commands.extend(args.allow_command)
     runner = Runner(
         relay=relay,
@@ -242,6 +244,7 @@ def cmd_worker(args: argparse.Namespace) -> int:
         work_root=work_root,
         runner_id=args.runner_id,
         allowed_commands=allowed_commands,
+        allowed_profiles=allowed_profiles,
     )
     if args.once:
         job_id = runner.run_once()

@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .models import JobManifest, JobStatus, utc_now
 from .relay import RelayStore
-from .security import validate_allowed_command
+from .security import validate_allowed_command, validate_allowed_profile
 from .util import atomic_write_json, sha256_file
 
 
@@ -24,12 +24,14 @@ class Runner:
         work_root: Path | str,
         runner_id: str | None = None,
         allowed_commands: list[str] | None = None,
+        allowed_profiles: list[str] | None = None,
     ):
         self.relay = relay
         self.target = target
         self.work_root = Path(work_root).expanduser().resolve()
         self.runner_id = runner_id or f"{socket.gethostname()}:{os.getpid()}"
         self.allowed_commands = allowed_commands or []
+        self.allowed_profiles = allowed_profiles or []
         self.work_root.mkdir(parents=True, exist_ok=True)
 
     def run_once(self) -> str | None:
@@ -55,6 +57,7 @@ class Runner:
         timed_out = False
 
         try:
+            validate_allowed_profile(manifest, self.allowed_profiles)
             validate_allowed_command(manifest, self.allowed_commands)
             self._prepare_artifact(manifest, package_dir)
             self._write_tree(package_dir, result_dir / "tree.txt")

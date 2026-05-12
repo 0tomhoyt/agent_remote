@@ -10,6 +10,9 @@
         "./run_case.sh",
         "./benchmark.sh"
       ],
+      "allowed_profiles": [
+        "op-test"
+      ],
       "ssh_host": "user@exec-a",
       "ssh_port": 22,
       "remote_relay_root": "/data/agent-remote/relay",

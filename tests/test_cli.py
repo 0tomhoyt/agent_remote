@@ -75,6 +75,7 @@ class CliTests(unittest.TestCase):
                             "exec-a": {
                                 "relay_root": str(relay),
                                 "default_timeout_sec": 30,
+                                "allowed_profiles": ["op-test"],
                             }
                         },
                         "profiles": {

@@ -34,15 +34,23 @@ Completed:
   - target-level worker command allowlists
   - `ssh-submit` direct SSH mode
   - example config at `examples/remote-run.config.json`
+- Implemented safety follow-up:
+  - target-level worker profile allowlists
+  - relay audit log at `audit/events.jsonl`
 - Added tests for:
   - profile submit config
   - disallowed command rejection
+  - disallowed profile rejection
+  - relay audit events
   - SSH direct transport command flow
 - Ran second-slice validation:
   - `PYTHONPATH=src python3 -m unittest discover -s tests`
   - `python3 -m compileall src tests`
   - `PYTHONPATH=src python3 -m agent_remote.cli --help`
   - `PYTHONPATH=src python3 -m agent_remote.cli ssh-submit --help`
+- Ran safety follow-up validation:
+  - `PYTHONPATH=src python3 -m unittest discover -s tests`
+  - `python3 -m compileall src tests`
 
 In progress:
 
@@ -51,5 +59,4 @@ In progress:
 Next:
 
 - Add HTTP relay design and service skeleton.
-- Add profile allowlists and audit logs.
 - Improve SSH direct mode bootstrap docs for installing `agent_remote` on the execution host.

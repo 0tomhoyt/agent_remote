@@ -23,6 +23,7 @@ class TargetConfig:
     work_root: str | None = None
     default_timeout_sec: int | None = None
     allowed_commands: list[str] = field(default_factory=list)
+    allowed_profiles: list[str] = field(default_factory=list)
     ssh_host: str | None = None
     ssh_port: int | None = None
     remote_relay_root: str | None = None
@@ -38,6 +39,7 @@ class TargetConfig:
             work_root=_optional_str(data.get("work_root")),
             default_timeout_sec=_optional_int(data.get("default_timeout_sec")),
             allowed_commands=[str(item) for item in data.get("allowed_commands", [])],
+            allowed_profiles=[str(item) for item in data.get("allowed_profiles", [])],
             ssh_host=_optional_str(data.get("ssh_host")),
             ssh_port=_optional_int(data.get("ssh_port")),
             remote_relay_root=_optional_str(data.get("remote_relay_root")),

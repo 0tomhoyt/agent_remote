@@ -3,6 +3,7 @@ from __future__ import annotations
 import tarfile
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from agent_remote.models import CommandSpec, JobManifest, JobStatus, new_job_id
@@ -49,6 +50,9 @@ class RelayRunnerTests(unittest.TestCase):
             out = root / "fetched"
             relay.fetch_results(manifest.job_id, out)
             self.assertTrue((out / "meta.json").exists())
+            audit_lines = (root / "relay" / "audit" / "events.jsonl").read_text(encoding="utf-8").splitlines()
+            events = [json.loads(line)["event"] for line in audit_lines]
+            self.assertEqual(events, ["job_submitted", "job_claimed", "job_finished"])
 
     def test_timeout_job_is_marked_timeout(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -101,6 +105,35 @@ class RelayRunnerTests(unittest.TestCase):
             finished = relay.read_manifest(manifest.job_id)
             self.assertEqual(finished.status, JobStatus.FAILED)
             self.assertIn("command is not allowed", finished.error or "")
+            self.assertFalse((relay.result_path(manifest.job_id) / "collected" / "result.json").exists())
+
+    def test_disallowed_profile_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            artifact = self._make_artifact(root, {"run_case.sh": "echo should-not-run > result.json\n"})
+            relay = RelayStore(root / "relay")
+            manifest = JobManifest(
+                job_id=new_job_id(),
+                target="exec-a",
+                artifact=artifact_ref(artifact),
+                profile="debug-shell",
+                command=CommandSpec(argv=["sh", "run_case.sh"], timeout_sec=10),
+                collect=["result.json"],
+            )
+
+            relay.submit(manifest, artifact)
+            runner = Runner(
+                relay,
+                target="exec-a",
+                work_root=root / "worker",
+                runner_id="test-runner",
+                allowed_profiles=["op-test"],
+            )
+            runner.run_once()
+
+            finished = relay.read_manifest(manifest.job_id)
+            self.assertEqual(finished.status, JobStatus.FAILED)
+            self.assertIn("profile is not allowed", finished.error or "")
             self.assertFalse((relay.result_path(manifest.job_id) / "collected" / "result.json").exists())
 
     @staticmethod

@@ -85,7 +85,8 @@ auditable. See `examples/remote-run.config.json`.
       "relay_root": ".agent-remote/relay",
       "work_root": ".agent-remote/worker",
       "default_timeout_sec": 600,
-      "allowed_commands": ["sh", "python3", "./run_case.sh"]
+      "allowed_commands": ["sh", "python3", "./run_case.sh"],
+      "allowed_profiles": ["op-test"]
     }
   },
   "profiles": {
@@ -167,6 +168,8 @@ Implemented in the MVP:
 - JSON-friendly CLI output.
 - Profile-based submit config.
 - Worker command allowlists.
+- Worker profile allowlists.
+- Relay audit log at `audit/events.jsonl`.
 - SSH direct mode that reuses the relay worker path.
 
 Planned next:

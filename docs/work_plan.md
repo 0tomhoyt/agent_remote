@@ -58,7 +58,8 @@ Add:
 Status:
 
 - worker command allowlists are implemented.
-- profile allowlists and audit logs are still pending.
+- worker profile allowlists are implemented.
+- relay audit logs are implemented.
 
 ## Phase 4: Direct and HTTP Transports
 
