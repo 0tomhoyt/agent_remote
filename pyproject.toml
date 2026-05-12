@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-remote"
+version = "0.1.0"
+description = "Remote job runner for AI-assisted build/execute workflows"
+requires-python = ">=3.10"
+readme = "README.md"
+authors = [
+  { name = "agent-remote maintainers" }
+]
+
+[project.scripts]
+remote-run = "agent_remote.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

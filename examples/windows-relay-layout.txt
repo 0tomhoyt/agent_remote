@@ -1,0 +1,18 @@
+C:\agent-remote\
+  artifacts\
+  jobs\
+    pending\
+    running\
+    done\
+    failed\
+    timeout\
+    canceled\
+  results\
+
+Build host example:
+
+remote-run --relay-root Z:\agent-remote submit --target exec-a --artifact dist\op_package.tar.gz --cmd "./run_case.sh case_001"
+
+Execution host example:
+
+remote-run --relay-root /mnt/windows/agent-remote worker --target exec-a --work-root /data/agent-remote/worker
