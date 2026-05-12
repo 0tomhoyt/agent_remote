@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: README usage guide update in progress
+Status: README usage guide updated and pushed
 
 Repository:
 
@@ -14,6 +14,7 @@ Repository:
 - `main` pushed to `origin`.
 - Second implementation commit: `1bb603a`.
 - Safety follow-up commit: `16187f0`.
+- README usage guide commit: `916b508`.
 
 Completed:
 
@@ -62,7 +63,7 @@ Completed:
 
 In progress:
 
-- Reviewing and committing README usage guide update.
+- Planning the HTTP relay service skeleton.
 
 Next:
 
