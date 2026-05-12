@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: relay-first documentation update in progress
+Status: relay-first documentation updated and pushed
 
 Repository:
 
@@ -15,6 +15,7 @@ Repository:
 - Second implementation commit: `1bb603a`.
 - Safety follow-up commit: `16187f0`.
 - README usage guide commit: `916b508`.
+- Relay-first documentation commit: `3b48efc`.
 
 Completed:
 
@@ -70,7 +71,7 @@ Completed:
 
 In progress:
 
-- Reviewing and committing relay-first documentation update.
+- Planning the HTTP relay service skeleton.
 
 Next:
 
