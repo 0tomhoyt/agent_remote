@@ -15,6 +15,14 @@
 
 这个模式也是最推荐给 AI agent 使用的默认路径，因为执行机不需要开放入站端口，编译机和执行机不互通时也可以通过 Windows PC 中转。
 
+先把一个容易误解的点说清楚：当前实现是 **同一份 Python 包，按命令区分角色**，不是三套代码仓库。
+
+- 编译机安装这份包，运行 `submit/status/logs/fetch`。
+- 执行机安装这份包，运行 `worker`。
+- Relay 在当前版本里不是常驻进程，而是一个共享目录或挂载目录。
+
+如果你的 Windows PC 只是一个共享目录、SMB/CIFS 目录、SFTP/sshfs 挂载点，那么当前版本可以工作，IP 配在挂载层。如果你希望 Windows PC 跑一个 HTTP relay 服务，通过 `http://<ip>:<port>` 访问，那是下一阶段要实现的 HTTP relay backend，当前还没有完成。
+
 当前版本已经支持：
 
 - 文件系统 relay 队列，适合共享目录、SFTP 挂载目录、Windows 中转目录。这是主模式。
@@ -61,6 +69,8 @@ Relay
 ```
 
 除非你明确只想做一次直连调试，否则建议优先使用 relay 模式。
+
+更详细的分角色部署说明见：[docs/deployment_roles.md](docs/deployment_roles.md)。
 
 ## 安装方式
 
@@ -131,6 +141,39 @@ python -m agent_remote.cli --config examples/remote-run.config.json fetch \
 ```
 
 `ssh-submit` 不在主模式速查里。它适合直连环境下偶尔快速跑一次，不建议作为 AI agent 的长期默认入口。
+
+## 编译机、Relay、执行机分别做什么
+
+| 角色 | 是否安装 agent_remote | 运行命令 | 主要配置 |
+| --- | --- | --- | --- |
+| 编译机 | 是 | `submit`、`status`、`logs`、`fetch` | `relay_root`、profiles |
+| Relay 共享目录 | 否 | 不运行命令 | 由 SMB/SFTP/sshfs/共享盘提供路径 |
+| 执行机 | 是 | `worker` | `relay_root`、`work_root`、白名单 |
+
+示例配置：
+
+- 编译机：[examples/build-host.relay.config.json](examples/build-host.relay.config.json)
+- 执行机：[examples/execution-host.relay.config.json](examples/execution-host.relay.config.json)
+
+当前主模式下，应用配置里不写 relay IP，而是写挂载后的路径：
+
+```json
+{
+  "targets": {
+    "exec-a": {
+      "relay_root": "/mnt/agent-remote"
+    }
+  }
+}
+```
+
+IP 在挂载层配置，例如：
+
+```bash
+sudo mount -t cifs //192.168.1.20/agent-remote /mnt/agent-remote
+```
+
+如果不想挂载共享目录，而是要配置 `relay_url = http://192.168.1.20:8080`，那说明需要 HTTP relay backend。这个 backend 还没实现，是下一阶段要补的核心能力。
 
 ## 主模式：Relay 目录结构
 

@@ -1,0 +1,19 @@
+{
+  "targets": {
+    "exec-a": {
+      "relay_root": "/mnt/agent-remote",
+      "work_root": "/data/agent-remote/worker",
+      "default_timeout_sec": 600,
+      "allowed_commands": [
+        "sh",
+        "python3",
+        "./run_case.sh",
+        "./benchmark.sh"
+      ],
+      "allowed_profiles": [
+        "op-test"
+      ]
+    }
+  },
+  "profiles": {}
+}

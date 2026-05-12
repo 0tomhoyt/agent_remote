@@ -10,6 +10,10 @@ The primary mode is relay-first: the build host submits jobs to a relay, and
 execution-host workers poll and return results through that same relay. Direct
 SSH is only an auxiliary convenience path.
 
+The current relay implementation is a filesystem relay. It does not run a relay
+daemon and therefore does not configure relay IPs inside the app. IPs live in
+the mount layer, such as SMB/CIFS, SFTP, sshfs, or a shared drive client.
+
 ## Phase 1: MVP Relay Runner
 
 Deliver a filesystem relay implementation that works with:
@@ -73,6 +77,7 @@ Status:
 Add:
 
 - HTTP relay server as the next relay backend
+- `relay_url` config for build-host and execution-host HTTP clients
 - direct SSH transport as an auxiliary mode
 - resumable upload/download where needed
 

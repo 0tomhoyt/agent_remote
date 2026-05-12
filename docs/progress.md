@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: relay-first documentation updated and pushed
+Status: role and relay configuration clarification in progress
 
 Repository:
 
@@ -68,10 +68,22 @@ Completed:
 - Ran relay-first documentation command validation:
   - `PYTHONPATH=src python3 -m agent_remote.cli --help`
   - `PYTHONPATH=src python3 -m agent_remote.cli worker --help`
+- Added role clarification:
+  - current implementation uses one Python package with role-specific commands
+  - build host runs submit/status/logs/fetch
+  - execution host runs worker
+  - current relay is a filesystem relay, so IP is configured in the mount layer
+- Added role-specific example configs:
+  - `examples/build-host.relay.config.json`
+  - `examples/execution-host.relay.config.json`
+- Ran role-config validation:
+  - `PYTHONPATH=src python3 -m agent_remote.cli --config examples/build-host.relay.config.json submit --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli --config examples/execution-host.relay.config.json worker --help`
+  - `PYTHONPATH=src python3 -m unittest discover -s tests`
 
 In progress:
 
-- Planning the HTTP relay service skeleton.
+- Reviewing and committing role and relay configuration clarification.
 
 Next:
 
