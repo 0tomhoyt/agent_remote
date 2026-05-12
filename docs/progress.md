@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: second slice and safety follow-up implemented and pushed
+Status: README usage guide update in progress
 
 Repository:
 
@@ -52,10 +52,17 @@ Completed:
 - Ran safety follow-up validation:
   - `PYTHONPATH=src python3 -m unittest discover -s tests`
   - `python3 -m compileall src tests`
+- Expanded README into a detailed Chinese usage guide covering installation,
+  CLI rules, relay layout, local demo, Windows relay, profile config, worker
+  safety limits, SSH direct mode, artifacts, collect patterns, JSON output,
+  audit logs, and troubleshooting.
+- Ran README command validation:
+  - `PYTHONPATH=src python3 -m agent_remote.cli --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli ssh-submit --help`
 
 In progress:
 
-- Planning the HTTP relay service skeleton.
+- Reviewing and committing README usage guide update.
 
 Next:
 
