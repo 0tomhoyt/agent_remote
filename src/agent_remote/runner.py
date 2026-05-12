@@ -12,15 +12,24 @@ from pathlib import Path
 
 from .models import JobManifest, JobStatus, utc_now
 from .relay import RelayStore
+from .security import validate_allowed_command
 from .util import atomic_write_json, sha256_file
 
 
 class Runner:
-    def __init__(self, relay: RelayStore, target: str, work_root: Path | str, runner_id: str | None = None):
+    def __init__(
+        self,
+        relay: RelayStore,
+        target: str,
+        work_root: Path | str,
+        runner_id: str | None = None,
+        allowed_commands: list[str] | None = None,
+    ):
         self.relay = relay
         self.target = target
         self.work_root = Path(work_root).expanduser().resolve()
         self.runner_id = runner_id or f"{socket.gethostname()}:{os.getpid()}"
+        self.allowed_commands = allowed_commands or []
         self.work_root.mkdir(parents=True, exist_ok=True)
 
     def run_once(self) -> str | None:
@@ -46,6 +55,7 @@ class Runner:
         timed_out = False
 
         try:
+            validate_allowed_command(manifest, self.allowed_commands)
             self._prepare_artifact(manifest, package_dir)
             self._write_tree(package_dir, result_dir / "tree.txt")
             manifest.timestamps["command_started_at"] = utc_now()
@@ -99,6 +109,7 @@ class Runner:
                 "duration_sec": duration_sec,
                 "artifact_sha256": manifest.artifact.sha256,
                 "command": manifest.command.argv,
+                "profile": manifest.profile,
                 "created_at": manifest.created_at,
                 "timestamps": manifest.timestamps,
                 "error": manifest.error,

@@ -62,6 +62,77 @@ class CliTests(unittest.TestCase):
             self._run_cli(["--relay-root", str(relay), "fetch", job_id, "--out", str(out_dir)])
             self.assertTrue((out_dir / "collected" / "result.json").exists())
 
+    def test_cli_submit_uses_profile_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            artifact = self._make_artifact(root)
+            relay = root / "relay"
+            config_path = root / "remote-run.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "targets": {
+                            "exec-a": {
+                                "relay_root": str(relay),
+                                "default_timeout_sec": 30,
+                            }
+                        },
+                        "profiles": {
+                            "op-test": {
+                                "target": "exec-a",
+                                "cmd": "sh run_case.sh from_profile",
+                                "collect": ["result.json"],
+                                "env": {"PROFILE_ENV": "1"},
+                            }
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            submit = self._run_cli(
+                [
+                    "--config",
+                    str(config_path),
+                    "submit",
+                    "--profile",
+                    "op-test",
+                    "--artifact",
+                    str(artifact),
+                    "--json",
+                ]
+            )
+            job_id = json.loads(submit)["job_id"]
+
+            self._run_cli(
+                [
+                    "--config",
+                    str(config_path),
+                    "worker",
+                    "--target",
+                    "exec-a",
+                    "--work-root",
+                    str(root / "worker"),
+                    "--once",
+                ]
+            )
+            status = json.loads(
+                self._run_cli(
+                    [
+                        "--config",
+                        str(config_path),
+                        "status",
+                        job_id,
+                        "--target",
+                        "exec-a",
+                        "--json",
+                    ]
+                )
+            )
+            self.assertEqual(status["profile"], "op-test")
+            self.assertEqual(status["command"]["timeout_sec"], 30)
+            self.assertEqual(status["command"]["env"]["PROFILE_ENV"], "1")
+
     @staticmethod
     def _run_cli(argv: list[str]) -> str:
         output = io.StringIO()

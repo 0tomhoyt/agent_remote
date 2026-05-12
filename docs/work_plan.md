@@ -29,12 +29,20 @@ Capabilities:
 Expose stable commands:
 
 - `remote-run submit`
+- `remote-run ssh-submit`
 - `remote-run status`
 - `remote-run logs`
 - `remote-run fetch`
 - `remote-run worker`
 
 All commands that return machine-readable information should support `--json`.
+
+Status:
+
+- `submit`, `status`, `logs`, `fetch`, and `worker` are implemented.
+- `ssh-submit` is implemented for direct SSH mode.
+- JSON output is implemented for submit, status, worker, and ssh-submit.
+- profile config is implemented for submit and ssh-submit.
 
 ## Phase 3: Safety
 
@@ -46,6 +54,11 @@ Add:
 - max log size
 - worker concurrency limits
 - audit logs
+
+Status:
+
+- worker command allowlists are implemented.
+- profile allowlists and audit logs are still pending.
 
 ## Phase 4: Direct and HTTP Transports
 

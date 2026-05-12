@@ -77,6 +77,7 @@ class JobManifest:
     target: str
     artifact: ArtifactRef
     command: CommandSpec
+    profile: str | None = None
     deploy: DeploySpec = field(default_factory=DeploySpec)
     collect: list[str] = field(default_factory=list)
     status: JobStatus = JobStatus.PENDING
@@ -98,6 +99,7 @@ class JobManifest:
             target=str(data["target"]),
             artifact=ArtifactRef.from_dict(data["artifact"]),
             command=CommandSpec.from_dict(data["command"]),
+            profile=data.get("profile"),
             deploy=DeploySpec.from_dict(data.get("deploy")),
             collect=[str(item) for item in data.get("collect", [])],
             status=JobStatus(str(data.get("status", JobStatus.PENDING.value))),

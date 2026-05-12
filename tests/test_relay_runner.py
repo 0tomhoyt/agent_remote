@@ -75,6 +75,34 @@ class RelayRunnerTests(unittest.TestCase):
             self.assertEqual(finished.status, JobStatus.TIMEOUT)
             self.assertIn("timed out", finished.error or "")
 
+    def test_disallowed_command_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            artifact = self._make_artifact(root, {"run_case.sh": "echo should-not-run > result.json\n"})
+            relay = RelayStore(root / "relay")
+            manifest = JobManifest(
+                job_id=new_job_id(),
+                target="exec-a",
+                artifact=artifact_ref(artifact),
+                command=CommandSpec(argv=["sh", "run_case.sh"], timeout_sec=10),
+                collect=["result.json"],
+            )
+
+            relay.submit(manifest, artifact)
+            runner = Runner(
+                relay,
+                target="exec-a",
+                work_root=root / "worker",
+                runner_id="test-runner",
+                allowed_commands=["python3"],
+            )
+            runner.run_once()
+
+            finished = relay.read_manifest(manifest.job_id)
+            self.assertEqual(finished.status, JobStatus.FAILED)
+            self.assertIn("command is not allowed", finished.error or "")
+            self.assertFalse((relay.result_path(manifest.job_id) / "collected" / "result.json").exists())
+
     @staticmethod
     def _make_artifact(root: Path, files: dict[str, str]) -> Path:
         package_dir = root / "package-src"

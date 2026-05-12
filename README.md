@@ -73,6 +73,85 @@ python -m agent_remote.cli fetch \
   --out ./results/<job_id>
 ```
 
+## Profile Config
+
+Profiles keep AI agents from repeating long commands and make common runs more
+auditable. See `examples/remote-run.config.json`.
+
+```json
+{
+  "targets": {
+    "exec-a": {
+      "relay_root": ".agent-remote/relay",
+      "work_root": ".agent-remote/worker",
+      "default_timeout_sec": 600,
+      "allowed_commands": ["sh", "python3", "./run_case.sh"]
+    }
+  },
+  "profiles": {
+    "op-test": {
+      "target": "exec-a",
+      "cmd": "sh run_case.sh case_001",
+      "collect": ["*.log", "result.json"],
+      "env": {
+        "LD_LIBRARY_PATH": "./lib"
+      }
+    }
+  }
+}
+```
+
+Submit with a profile:
+
+```bash
+python -m agent_remote.cli --config examples/remote-run.config.json submit \
+  --profile op-test \
+  --artifact ./dist/op_package.tar.gz
+```
+
+Run a worker with target-level command allowlists:
+
+```bash
+python -m agent_remote.cli --config examples/remote-run.config.json worker \
+  --target exec-a \
+  --once
+```
+
+Query through the target config:
+
+```bash
+python -m agent_remote.cli --config examples/remote-run.config.json status \
+  <job_id> \
+  --target exec-a
+```
+
+## SSH Direct Mode
+
+When the build host can SSH to the execution host, `ssh-submit` copies the local
+relay job to the remote relay, runs one remote worker pass, and copies results
+back to the local relay.
+
+The execution host must have `agent_remote` importable by the configured remote
+Python.
+
+```bash
+python -m agent_remote.cli --config examples/remote-run.config.json ssh-submit \
+  --profile op-test \
+  --artifact ./dist/op_package.tar.gz
+```
+
+Equivalent command without config:
+
+```bash
+python -m agent_remote.cli ssh-submit \
+  --target exec-a \
+  --artifact ./dist/op_package.tar.gz \
+  --cmd "sh run_case.sh case_001" \
+  --ssh-host user@exec-a \
+  --remote-relay-root /data/agent-remote/relay \
+  --remote-work-root /data/agent-remote/worker
+```
+
 ## Current Scope
 
 Implemented in the MVP:
@@ -86,11 +165,12 @@ Implemented in the MVP:
 - result metadata capture.
 - file collection by glob pattern.
 - JSON-friendly CLI output.
+- Profile-based submit config.
+- Worker command allowlists.
+- SSH direct mode that reuses the relay worker path.
 
 Planned next:
 
-- SSH direct transport.
 - HTTP relay service.
-- command/profile allowlists.
 - stronger diagnostics.
 - multi-worker locking and heartbeats.

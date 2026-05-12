@@ -2,7 +2,7 @@
 
 ## 2026-05-12
 
-Status: MVP implemented and pushed
+Status: second slice implemented locally
 
 Repository:
 
@@ -28,13 +28,27 @@ Completed:
 - Ran validation:
   - `PYTHONPATH=src python3 -m unittest discover -s tests`
   - `python3 -m compileall src tests`
+- Implemented second slice:
+  - profile-based submit config via JSON/TOML
+  - target-level worker command allowlists
+  - `ssh-submit` direct SSH mode
+  - example config at `examples/remote-run.config.json`
+- Added tests for:
+  - profile submit config
+  - disallowed command rejection
+  - SSH direct transport command flow
+- Ran second-slice validation:
+  - `PYTHONPATH=src python3 -m unittest discover -s tests`
+  - `python3 -m compileall src tests`
+  - `PYTHONPATH=src python3 -m agent_remote.cli --help`
+  - `PYTHONPATH=src python3 -m agent_remote.cli ssh-submit --help`
 
 In progress:
 
-- Planning the next implementation slice.
+- Preparing the second-slice commit.
 
 Next:
 
-- Add SSH direct transport.
-- Add command/profile allowlists.
 - Add HTTP relay design and service skeleton.
+- Add profile allowlists and audit logs.
+- Improve SSH direct mode bootstrap docs for installing `agent_remote` on the execution host.

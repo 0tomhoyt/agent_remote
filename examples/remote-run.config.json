@@ -1,0 +1,36 @@
+{
+  "targets": {
+    "exec-a": {
+      "relay_root": ".agent-remote/relay",
+      "work_root": ".agent-remote/worker",
+      "default_timeout_sec": 600,
+      "allowed_commands": [
+        "sh",
+        "python3",
+        "./run_case.sh",
+        "./benchmark.sh"
+      ],
+      "ssh_host": "user@exec-a",
+      "ssh_port": 22,
+      "remote_relay_root": "/data/agent-remote/relay",
+      "remote_work_root": "/data/agent-remote/worker",
+      "remote_python": "python3"
+    }
+  },
+  "profiles": {
+    "op-test": {
+      "target": "exec-a",
+      "cmd": "sh run_case.sh case_001",
+      "timeout_sec": 600,
+      "collect": [
+        "*.log",
+        "result.json",
+        "*.profile",
+        "core.*"
+      ],
+      "env": {
+        "LD_LIBRARY_PATH": "./lib"
+      }
+    }
+  }
+}
