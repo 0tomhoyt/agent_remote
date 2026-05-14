@@ -12,6 +12,9 @@ authors = [
   { name = "agent-remote maintainers" }
 ]
 
+[project.optional-dependencies]
+setup = ["paramiko>=3.0"]
+
 [project.scripts]
 remote-run = "agent_remote.cli:main"
 

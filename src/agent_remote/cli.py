@@ -91,6 +91,19 @@ def build_parser() -> argparse.ArgumentParser:
     server.add_argument("--storage-root")
     server.set_defaults(func=cmd_relay_server)
 
+    setup = subparsers.add_parser("setup", help="one-click relay setup wizard")
+    setup.add_argument("--build-host", help="build host in user@host format")
+    setup.add_argument("--build-password", help="build host SSH password")
+    setup.add_argument("--exec-host", help="execution host in user@host format")
+    setup.add_argument("--exec-password", help="execution host SSH password")
+    setup.add_argument("--target-name", default="exec-a", help="target name in config (default: exec-a)")
+    setup.add_argument("--relay-port", type=int, default=8080, help="relay server port (default: 8080)")
+    setup.add_argument("--remote-python", default="python3", help="Python executable on remote hosts")
+    setup.add_argument("--install-method", choices=["pip", "git"], default="pip", help="how to install agent_remote on remotes")
+    setup.add_argument("--skip-relay-start", action="store_true", help="do not auto-start relay server after setup")
+    setup.add_argument("--json", action="store_true")
+    setup.set_defaults(func=cmd_setup)
+
     return parser
 
 
@@ -283,6 +296,11 @@ def cmd_relay_server(args: argparse.Namespace) -> int:
     finally:
         server.server_close()
     return 0
+
+
+def cmd_setup(args: argparse.Namespace) -> int:
+    from .setup import run_setup
+    return run_setup(args)
 
 
 def resolve_relay(args: argparse.Namespace, config: RemoteRunConfig, target: str | None):
